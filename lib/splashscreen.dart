@@ -27,7 +27,7 @@ class _SplashScreenStateState extends State<SplashScreenState> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset("./lib/images/cart.png", scale: 1.2),
-            const Text("Pal Store", style: TextStyle(fontSize: 24)),
+            const Text("Dhika Store", style: TextStyle(fontSize: 24)),
           ],
         ),
       ),

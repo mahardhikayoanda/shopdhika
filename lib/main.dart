@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'homepage.dart';
 import 'splashscreen.dart';
 
+const String baseUrl = "http://192.168.18.6/server_shopdhika";
+
 void main() {
   runApp(const MyApp());
 }

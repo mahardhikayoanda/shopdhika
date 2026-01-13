@@ -1,10 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'homepage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cart_page.dart';
+import 'checkout.dart';
+import 'main.dart'; // For baseUrl
 
 class GridSepatuPria extends StatefulWidget {
   const GridSepatuPria({super.key});
@@ -16,8 +17,7 @@ class GridSepatuPria extends StatefulWidget {
 class _GridSepatuPriaState extends State<GridSepatuPria> {
   List<dynamic> sepatuPriaProduct = [];
   Future<void> getAllSepatuPria() async {
-    String urlSepatuPria =
-        "https://backend-mobile.drenzzz.dev/gridsepatupria.php";
+    String urlSepatuPria = "https://backend-mobile.drenzzz.dev/gridsepatupria.php";
     try {
       var response = await http.get(Uri.parse(urlSepatuPria));
       setState(() {
@@ -32,6 +32,50 @@ class _GridSepatuPriaState extends State<GridSepatuPria> {
   void initState() {
     super.initState();
     getAllSepatuPria();
+  }
+
+  // Helper to add item to cart
+  Future<void> _addToCart(Map<String, dynamic> product) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_id');
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please login first")));
+      return;
+    }
+
+    bool success = await CartService().addToCart(product['id'].toString());
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Added to cart")));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to add - Try Relogin")));
+    }
+  }
+
+  // Helper for checkout
+  Future<void> _checkoutNow(Map<String, dynamic> product) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_id');
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please login first")));
+      return;
+    }
+
+    // Add to cart first
+    bool success = await CartService().addToCart(product['id'].toString());
+    if (success) {
+      // Then proceed to checkout
+      if (mounted) {
+        Checkout.checkout(context);
+      }
+    } else {
+      print("DEBUG: _checkoutNow failed in GridSepatuPria");
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to process - Try Relogin or Check Server")));
+    }
   }
 
   @override
@@ -83,7 +127,7 @@ class _GridSepatuPriaState extends State<GridSepatuPria> {
               crossAxisCount: 2,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              childAspectRatio: 0.65,
+              childAspectRatio: 0.60,
             ),
             itemCount: sepatuPriaProduct.length,
             itemBuilder: (context, int index) {
@@ -139,7 +183,7 @@ class _GridSepatuPriaState extends State<GridSepatuPria> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
@@ -172,6 +216,38 @@ class _GridSepatuPriaState extends State<GridSepatuPria> {
                           ],
                         ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size(0, 30),
+                                ),
+                                onPressed: () => _addToCart(item),
+                                child: const Icon(Icons.add_shopping_cart, size: 16, color: Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size(0, 30),
+                                ),
+                                onPressed: () => _checkoutNow(item),
+                                child: const Text("Buy", style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 4),
                     ],
                   ),
                 ),
@@ -221,125 +297,119 @@ class DetilSepatuPria extends StatelessWidget {
         ],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Container(
-              width: double.infinity,
-              height: 300,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: double.infinity,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                ),
+                child: Image.network(
+                  item['images'],
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(Icons.image_not_supported,
+                          size: 50, color: Colors.grey),
+                    );
+                  },
+                ),
               ),
-              child: Image.network(
-                item['images'],
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(Icons.image_not_supported,
-                        size: 50, color: Colors.grey),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Product Description",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    item['description'],
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(
-                        "Rp ${item['price']}",
-                        style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.favorite,
-                            size: 24,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            "Rp ${item['promo']}",
-                            style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          )),
-                      onPressed: () async {
-                        SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                        String? token = prefs.getString('token');
-                        if (token == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text("Please login first")));
-                          return;
-                        }
-                        try {
-                          final response = await http.post(
-                              Uri.parse(
-                                  "https://backend-mobile.drenzzz.dev/cart.php"),
-                              headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": "Bearer $token"
-                              },
-                              body: jsonEncode(
-                                  {"action": "add", "product_id": item['id']}));
-                          final data = jsonDecode(response.body);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(data['message'])));
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Error: $e")));
-                        }
-                      },
-                      child: const Text(
-                        "Add to Cart",
-                        style: TextStyle(
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Text(
+                      "Product Description",
+                      style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.black),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      item['description'] ?? "No description available.",
+                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(
+                          "Rp ${item['price']}",
+                          style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.favorite,
+                              size: 24,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              "Rp ${item['promo']}",
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            )),
+                        onPressed: () async {
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          String? userId = prefs.getString('user_id');
+                          if (userId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text("Please login first")));
+                            return;
+                          }
+
+                          bool success = await CartService().addToCart(item['id'].toString());
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Added to cart")));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Failed to add to cart")));
+                          }
+                        },
+                        child: const Text(
+                          "Add to Cart",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

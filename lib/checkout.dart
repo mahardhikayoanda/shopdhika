@@ -6,24 +6,28 @@ import 'payment_page.dart';
 import 'payment_success_page.dart';
 
 class Checkout {
-  static const String baseUrl = "https://backend-mobile.drenzzz.dev";
+  static const String baseUrl = "http://192.168.18.6/server_shopdhika";
 
   static Future<Map<String, dynamic>> createTransaction() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
+    String? userId = prefs.getString('user_id');
 
-    if (token == null) {
+    if (userId == null) {
       return {"success": false, "message": "Silahkan login terlebih dahulu"};
     }
+
+    print("DEBUG: checkout user_id: $userId"); // Custom Debug
 
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/checkout.php"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token"
+        body: {
+          "user_id": userId,
+          "action": "checkout" // Ensure backend knows it's a checkout
         },
       );
+      
+      print("DEBUG: checkout response: ${response.statusCode} - ${response.body}"); // Custom Debug
 
       final data = jsonDecode(response.body);
       return data;
@@ -34,18 +38,17 @@ class Checkout {
 
   static Future<void> clearCart() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
+    String? userId = prefs.getString('user_id');
 
-    if (token == null) return;
+    if (userId == null) return;
 
     try {
       await http.post(
         Uri.parse("$baseUrl/cart.php"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token"
+        body: {
+          "user_id": userId,
+          "action": "clear"
         },
-        body: jsonEncode({"action": "clear"}),
       );
     } catch (e) {
       debugPrint("Error clearing cart: $e");
