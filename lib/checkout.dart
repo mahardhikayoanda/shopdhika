@@ -1,124 +1,242 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'payment_page.dart';
-import 'payment_success_page.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'homepage.dart';
 
-class Checkout {
-  static const String baseUrl = "http://192.168.18.6/server_shopdhika";
+class CheckoutPage extends StatefulWidget {
+  final int totalPrice;
+  final List cartItems;
 
-  static Future<Map<String, dynamic>> createTransaction() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('user_id');
+  const CheckoutPage({
+    super.key,
+    required this.totalPrice,
+    required this.cartItems,
+  });
 
-    if (userId == null) {
-      return {"success": false, "message": "Silahkan login terlebih dahulu"};
-    }
+  @override
+  State<CheckoutPage> createState() => _CheckoutPageState();
+}
 
-    print("DEBUG: checkout user_id: $userId"); // Custom Debug
+class _CheckoutPageState extends State<CheckoutPage> {
+  bool isLoading = true;
+  bool isWebViewLoading = true;
+  String? snapToken;
+  String? orderId;
+  String? errorMessage;
+  double progress = 0;
 
+  final String checkoutUrl =
+      "https://10.0.3.2/server_shop_vanzi/midtrans_checkout.php";
+
+  final String forcePaidUrl =
+      "https://10.0.3.2/server_shop_vanzi/force_payment_success.php";
+
+  final String midtransSnapUrl =
+      "https://app.sandbox.midtrans.com/snap/v2/vtweb/";
+
+  @override
+  void initState() {
+    super.initState();
+    _getSnapToken();
+  }
+
+  // =======================
+  // GET SNAP TOKEN
+  // =======================
+  Future<void> _getSnapToken() async {
     try {
+      List<Map<String, dynamic>> items = widget.cartItems.map((item) {
+        return {
+          "id": item['product_id'].toString(),
+          "name": item['name'],
+          "price": int.tryParse(item['price'].toString()) ?? 0,
+          "quantity": int.tryParse(item['quantity'].toString()) ?? 1,
+        };
+      }).toList();
+
       final response = await http.post(
-        Uri.parse("$baseUrl/checkout.php"),
-        body: {
-          "user_id": userId,
-          "action": "checkout" // Ensure backend knows it's a checkout
-        },
+        Uri.parse(checkoutUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": 1,
+          "total_price": widget.totalPrice,
+          "items": items,
+        }),
       );
-      
-      print("DEBUG: checkout response: ${response.statusCode} - ${response.body}"); // Custom Debug
 
       final data = jsonDecode(response.body);
-      return data;
+
+      if (data['success'] == true) {
+        setState(() {
+          snapToken = data['snap_token'];
+          orderId = data['order_id'];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = data['message'];
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      return {"success": false, "message": "Error: $e"};
+      setState(() {
+        errorMessage = 'Terjadi kesalahan: $e';
+        isLoading = false;
+      });
     }
   }
 
-  static Future<void> clearCart() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('user_id');
-
-    if (userId == null) return;
-
+  // =======================
+  // FORCE PAYMENT SUCCESS
+  // =======================
+  Future<void> _finishPayment() async {
     try {
-      await http.post(
-        Uri.parse("$baseUrl/cart.php"),
-        body: {
-          "user_id": userId,
-          "action": "clear"
-        },
+      final res = await http.post(
+        Uri.parse(forcePaidUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "order_id": orderId,
+        }),
       );
+
+      final data = jsonDecode(res.body);
+
+      if (data['success'] == true) {
+        _showSuccessDialog();
+      } else {
+        _showPendingDialog();
+      }
     } catch (e) {
-      debugPrint("Error clearing cart: $e");
+      _showPendingDialog();
     }
   }
 
-  static Future<void> checkout(BuildContext context,
-      {VoidCallback? onSuccess}) async {
-    // Show loading dialog
+  // =======================
+  // DIALOGS
+  // =======================
+  void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.check_circle, color: Colors.green, size: 26,),
+            SizedBox(width: 8),
+            Text("Pembayaran Berhasil",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text("Pesanan Anda berhasil diproses.",
+            style: TextStyle(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const HomePage()),
+                (route) => false,
+              );
+            },
+            child: const Text("OK"),
+          ),
+        ],
       ),
     );
+  }
 
-    // Create transaction on backend
-    final result = await createTransaction();
-
-    // Hide loading dialog
-    Navigator.of(context).pop();
-
-    if (result['success'] == true) {
-      final redirectUrl = result['redirect_url'];
-
-      if (redirectUrl != null) {
-        // Navigate to PaymentPage (WebView)
-        // ignore: use_build_context_synchronously
-        final paymentResult = await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => PaymentPage(paymentUrl: redirectUrl),
-          ),
-        );
-
-        // Handle payment result
-        if (paymentResult == true) {
-          // Payment was successful
-          await clearCart(); // Clear the cart now
-
-          if (onSuccess != null) {
-            onSuccess();
-          }
-
-          // Navigate to Success Page
-          // ignore: use_build_context_synchronously
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const PaymentSuccessPage(),
-            ),
-          );
-        } else {
-          // Payment failed or cancelled
-          // ignore: use_build_context_synchronously
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Pembayaran dibatalkan atau gagal"),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    } else {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? "Checkout gagal"),
-          backgroundColor: Colors.red,
+  void _showPendingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.access_time, color: Colors.orange),
+            SizedBox(width: 10),
+            Text("Menunggu Konfirmasi"),
+          ],
         ),
-      );
+        content: const Text(
+            "Pembayaran belum terkonfirmasi, silakan coba lagi."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =======================
+  // UI
+  // =======================
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green.shade400,
+        title: const Text('Pembayaran', style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          if (isWebViewLoading && snapToken != null)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+            ),
+          TextButton(
+            onPressed: _finishPayment,
+            child: const Text(
+              "Selesai",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
     }
+
+    if (errorMessage != null) {
+      return Center(child: Text(errorMessage!));
+    }
+
+    return Column(
+      children: [
+        if (progress < 1.0)
+          LinearProgressIndicator(value: progress),
+        Expanded(
+          child: InAppWebView(
+            initialUrlRequest: URLRequest(
+              url: WebUri("$midtransSnapUrl$snapToken"),
+            ),
+            onProgressChanged: (_, p) {
+              setState(() => progress = p / 100);
+            },
+            onLoadStart: (_, __) {
+              setState(() => isWebViewLoading = true);
+            },
+            onLoadStop: (_, __) {
+              setState(() => isWebViewLoading = false);
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -1,417 +1,372 @@
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'homepage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'cart_page.dart';
-import 'checkout.dart'; // Import checkout
-import 'main.dart'; // For baseUrl
+import 'package:shopdhika/cart.dart';
+import 'dart:convert';
 
-class GridElectronic extends StatefulWidget {
-  const GridElectronic({super.key});
+import 'package:shopdhika/homepage.dart';
+
+class GridElektronik extends StatefulWidget {
+  const GridElektronik({super.key});
 
   @override
-  State<GridElectronic> createState() => _GridElectronicState();
+  State<GridElektronik> createState() => _GridBajuPriaState();
 }
 
-class _GridElectronicState extends State<GridElectronic> {
-  List<dynamic> electronicProduct = [];
-  Future<void> getAllElectronic() async {
-    String urlElectronic = "https://backend-mobile.drenzzz.dev/gridelektronik.php";
+class _GridBajuPriaState extends State<GridElektronik> {
+  List<dynamic> products = [];
+  bool isLoading = true;
+
+  Future<void> getAllProducts() async {
+    const String url = "https://10.0.3.2/server_shop_vanzi/gridelektronik.php";
     try {
-      var response = await http.get(Uri.parse(urlElectronic));
-      setState(() {
-        electronicProduct = jsonDecode(response.body);
-      });
-    } catch (exc) {
-      print(exc);
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        setState(() {
+          products = jsonDecode(response.body);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+      setState(() => isLoading = false);
     }
   }
 
   @override
   void initState() {
     super.initState();
-    getAllElectronic();
-  }
-
-  // Helper to add item to cart
-  Future<void> _addToCart(Map<String, dynamic> product) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('user_id');
-    if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please login first")));
-      return;
-    }
-
-    bool success = await CartService().addToCart(product['id'].toString());
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Added to cart")));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to add - Try Relogin")));
-    }
-  }
-
-  // Helper for checkout
-  Future<void> _checkoutNow(Map<String, dynamic> product) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('user_id');
-    if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please login first")));
-      return;
-    }
-
-    // Add to cart first
-    bool success = await CartService().addToCart(product['id'].toString());
-    if (success) {
-      // Then proceed to checkout
-      if (mounted) {
-        Checkout.checkout(context);
-      }
-    } else {
-      print("DEBUG: _checkoutNow failed in GridElectronic");
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to process - Try Relogin or Check Server")));
-    }
+    getAllProducts();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const HomePage()));
-            },
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              size: 25,
-              color: Colors.white,
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.green.shade400,
+        centerTitle: true,
+        title: const Text("Elektronik", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          ),
+        ),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.7, // Sedikit lebih tinggi untuk layout harga
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+              ),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final item = products[index];
+                return _buildProductCard(item);
+              },
             ),
+    );
+  }
+
+  Widget _buildProductCard(dynamic item) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailElektronik(item: item),
           ),
-          title: const Text(
-            "Electronic Products",
-            style: TextStyle(
-                fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          centerTitle: true,
-          backgroundColor: Colors.green,
-          actions: [
-            IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.info_outline,
-                  color: Colors.white,
-                  size: 22,
-                )),
-            IconButton(
-                onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const CartPage()));
-                },
-                icon: const Icon(
-                  Icons.shopping_cart_outlined,
-                  color: Colors.white,
-                  size: 22,
-                )),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
-        body: Center(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 0.60, // Adjusted for buttons
-            ),
-            itemCount: electronicProduct.length,
-            itemBuilder: (context, int index) {
-              final item = electronicProduct[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => DetilElectronic(item: item)));
-                },
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// IMAGE & FAVORITE ICON (STACK)
+            Expanded(
+              child: Stack(
+                children: [
+                  // Gambar Produk
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    child: Image.network(
+                      item['images'],
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey[300],
+                        child: const Center(child: Icon(Icons.image_not_supported)),
+                      ),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
+                  // Icon Favorit (Floating Top Right)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.favorite_border,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// CONTENT
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nama Produk
+                  Text(
+                    item['name'],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Harga Kiri & Promo Kanan
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Sisi Kiri: Harga Asli (Coret)
                       Expanded(
-                        flex: 3,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(8),
-                              topRight: Radius.circular(8),
-                            ),
-                            color: Colors.grey[100],
-                          ),
-                          child: Image.network(
-                            item['images'],
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  color: Colors.grey,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
                         child: Text(
-                          item['name'],
-                          style: const TextStyle(
+                          "Rp ${item['price']}",
+                          style: TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey[500],
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text(
-                              "Rp ${item['price']}",
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.favorite,
-                                  size: 14,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  "Rp ${item['promo']}",
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      // Sisi Kanan: Harga Promo (Bold/Biru)
+                      Text(
+                        "Rp ${item['promo']}",
+                        style: const TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size(0, 30),
-                                ),
-                                onPressed: () => _addToCart(item),
-                                child: const Icon(Icons.add_shopping_cart, size: 16, color: Colors.white),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size(0, 30),
-                                ),
-                                onPressed: () => _checkoutNow(item),
-                                child: const Text("Buy", style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 4),
                     ],
                   ),
-                ),
-              );
-            },
-          ),
-        ));
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
-class DetilElectronic extends StatelessWidget {
-  final dynamic item;
-  const DetilElectronic({super.key, required this.item});
+/// =================================================
+/// DETAIL Elektronik
+/// =================================================
+
+class DetailElektronik extends StatelessWidget {
+  final Map<String, dynamic> item;
+
+  const DetailElektronik({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            size: 25,
-            color: Colors.white,
-          ),
-        ),
-        title: Text(
-          item["name"],
-          style: const TextStyle(
-              fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        elevation: 0,
+        backgroundColor: Colors.white,
         centerTitle: true,
-        backgroundColor: Colors.green,
+        title: Text(
+          item['name'],
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const CartPage()));
-              },
-              icon: const Icon(
-                Icons.shopping_cart_outlined,
-                color: Colors.white,
-                size: 22,
-              )),
+            onPressed: () {},
+            icon: const Icon(Icons.favorite, color: Colors.red),
+          ),
         ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                width: double.infinity,
-                height: 300,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                ),
-                child: Image.network(
-                  item['images'],
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.image_not_supported,
-                          size: 50, color: Colors.grey),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      "Product Description",
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gambar Besar
+            Image.network(
+              item['images'],
+              width: double.infinity,
+              height: 350,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                  height: 350,
+                  color: Colors.grey[200],
+                  child: const Center(child: Icon(Icons.broken_image, size: 50))),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nama Produk
+                  Text(
+                    item['name'],
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      item['description'] ?? "No description available.",
-                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Harga dan Promo Sejajar (Kiri & Kanan)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200)
                     ),
-                    const SizedBox(height: 20),
-                    Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text(
-                          "Rp ${item['price']}",
-                          style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
-                              Icons.favorite,
-                              size: 24,
-                              color: Colors.red,
+                            const Text("Harga Asli", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text(
+                              "Rp ${item['price']}",
+                              style: const TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
                             ),
-                            const SizedBox(width: 5),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text("Harga Promo", style: TextStyle(fontSize: 10, color: Colors.blueAccent)),
                             Text(
                               "Rp ${item['promo']}",
                               style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold),
+                                fontSize: 22,
+                                color: Colors.blueAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            )),
-                        onPressed: () async {
-                          SharedPreferences prefs =
-                              await SharedPreferences.getInstance();
-                          String? userId = prefs.getString('user_id');
-                          if (userId == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Please login first")));
-                            return;
-                          }
+                  ),
 
-                          bool success = await CartService().addToCart(item['id'].toString());
-                          if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Added to cart")));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Failed to add to cart")));
-                          }
-                        },
-                        child: const Text(
-                          "Add to Cart",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Added checkout button specifically for detail page too if needed, but user asked for "di dakam kategori", likely meaning grid.
-                    // But good to have here too? The user didn't explicitly ask for Detail Page, but "produk di dakam kategori". Grid is safer.
-                    // I'll stick to Grid for now as per explicit request to avoid changing too much.
-                  ],
-                ),
+                  const Divider(height: 40),
+                  
+                  const Text(
+                    "Deskripsi Produk",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    item['description'],
+                    style: TextStyle(color: Colors.grey[700], height: 1.6, fontSize: 15),
+                  ),
+                  const SizedBox(height: 100),
+                ],
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+      bottomSheet: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        ),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade400,
+            minimumSize: const Size(double.infinity, 55),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 5,
+          ),
+          onPressed: () async {
+            // ... (Logika Add to Cart Kamu Tetap Sama)
+            final res = await http.post(
+              Uri.parse("https://10.0.3.2/server_shop_vanzi/cart.php"),
+              headers: {"Content-Type": "application/json"},
+              body: jsonEncode({
+                "action": "add",
+                "user_id": 1,
+                "product_id": item['id'],
+              }),
+            );
+
+            if (res.body.isEmpty) return;
+
+            dynamic data;
+            try {
+              data = jsonDecode(res.body);
+            } catch (e) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error: ${e.toString()}")),
+              );
+              return;
+            }
+
+            if (data['success'] == true) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartPage()),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(data['message'] ?? "Failed")),
+              );
+            }
+          },
+          child: const Text(
+            "Add to Cart",
+            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
       ),

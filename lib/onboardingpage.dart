@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-
-import 'loginpage.dart';
+import 'package:shopdhika/homepage.dart';
+import 'package:shopdhika/login.dart';
 
 class OnboardingPage extends StatefulWidget {
-  OnboardingPage({Key? key}) : super(key: key);
+  const OnboardingPage({Key? key}) : super(key: key);
 
   @override
   _OnboardingPageState createState() => _OnboardingPageState();
@@ -14,36 +14,36 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int indexPage = 0;
   List<Map<String, String>> onBoardData = [
     {
-      "title": "Dhika Store",
+      "title": "Vanzi Store",
       "subtitle": "Welcome to our Shop!",
       "image":
-          "https://img.freepik.com/free-vector/screens-isometric-electronic-devices_23-2147647441.jpg?semt=ais_hybrid&w=740&q=80",
+          "https://atlantaelectronics.co.id/assets/public/images/product/240109012132GCX257CQEW.png",
     },
     {
       "title": "Men's Fashion",
       "subtitle":
           "Discover the latest men's clothing collection for your daily style",
       "image":
-          "https://p19-images-common-sign-sg.tokopedia-static.net/tos-maliva-i-o3syd03w52-us/18627d18a7764641ac8d09dbdceee222~tplv-o3syd03w52-resize-jpeg:1600:1600.jpeg?lk3s=0ccea506&x-expires=1766557108&x-signature=eTuhuInqzbxc5IXdqdAgMkzzMHc%3D&x-signature-webp=Hd38DhH63NzCt%2FeGLaZJ6Qpf9Lk%3D",
+          "https://edit.voila.id/wp-content/uploads/2025/01/1.-Jenis-baju-pria.jpg",
     },
     {
       "title": "Women's Fashion",
       "subtitle":
           "Look beautiful and elegant with our women's clothing collection",
       "image":
-          "https://img.pikbest.com/png-images/20240801/womens-shirt-template-stock_10691737.png!w700wp",
+          "https://edit.voila.id/wp-content/uploads/2025/12/12-1.jpg",
     },
     {
-      "title": "Sporty Shoes",
+      "title": "Men's Shoes",
       "subtitle": "Comfortable for sports and everyday activities",
       "image":
-          "https://i.pinimg.com/736x/0d/7e/48/0d7e486b3caf7284693b8607f46f0dd7.jpg",
+          "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto/772b77e2-2baf-4b44-ab4e-d767b038b105/NIKE+P-6000+PRM.png",
     },
     {
       "title": "Women's Heels",
       "subtitle": "Complete your look with our best heels collection",
       "image":
-          "https://pics.clipartpng.com/Black_High_Heels_PNG_Clipart-3139.png",
+          "https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full/catalog-image/109/MTA-172888543/brd-44261_garage-sepatu-high-heels-wanita-h-3974-wanita-kasual-kerja-kantor-trendi-berkualitas-hitam_full01-6911313f.jpg",
     },
   ];
 
@@ -117,7 +117,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: indexPage == index
-                              ? Colors.blueAccent
+                              ? Colors.blue
                               : Colors.grey.shade300),
                     ),
                   ),
