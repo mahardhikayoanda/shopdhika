@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shop_pal/onboardingpage.dart';
-import 'cartpage.dart';
+import 'package:shopdhika/onboardingpage.dart';
+import 'cart_page.dart';
 import 'gridelectronic.dart';
 import 'gridbajupria.dart';
 import 'gridbajuwanita.dart';
@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   int indexBanner = 0;
 
   Future<void> getAllProduct() async {
-    String urlProductItem = "https://backend-mobile.drenzzz.dev/allproduct.php";
+    String urlProductItem = "http://192.168.18.6/server_shopdhika/allproduct.php";
     try {
       var response = await http.get(Uri.parse(urlProductItem));
       if (response.statusCode == 200) {
@@ -90,8 +90,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     List<String> bannerImage = [
-      "./lib/images/banner.jpeg",
-      "./lib/images/banner1.png",
+      "./lib/images/banner.jpg",
+      "./lib/images/banner1.jpg",
       "./lib/images/banner2.jpg",
     ];
 
@@ -246,7 +246,7 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
                                   Image.asset(
-                                    "./lib/images/icons8-t-shirt-64.png",
+                                    "./lib/images/icons8-t-shirt-50.png",
                                     width: 45,
                                     height: 45,
                                   ),
@@ -308,7 +308,7 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
                                   Image.asset(
-                                    "./lib/images/icons8-undershirt-96.png",
+                                    "./lib/images/icons8-undershirt-32.png",
                                     width: 45,
                                     height: 45,
                                   ),
@@ -339,7 +339,7 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
                                   Image.asset(
-                                    "./lib/images/icons8-heels-64.png",
+                                    "./lib/images/icons8-heels-32.png",
                                     width: 45,
                                     height: 45,
                                   ),

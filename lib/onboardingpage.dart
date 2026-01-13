@@ -14,7 +14,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int indexPage = 0;
   List<Map<String, String>> onBoardData = [
     {
-      "title": "Pal Store",
+      "title": "Dhika Store",
       "subtitle": "Welcome to our Shop!",
       "image":
           "https://img.freepik.com/free-vector/screens-isometric-electronic-devices_23-2147647441.jpg?semt=ais_hybrid&w=740&q=80",

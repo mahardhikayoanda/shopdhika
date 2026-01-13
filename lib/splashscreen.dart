@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:shop_pal/onboardingpage.dart';
+import 'package:shopdhika/onboardingpage.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreenState extends StatefulWidget {

@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://backend-mobile.drenzzz.dev/auth.php"),
+        Uri.parse("http://192.168.18.6/server_shopdhika/auth.php"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "action": "login",

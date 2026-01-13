@@ -31,6 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^0.13.6
+  shared_preferences: ^2.2.0
+  webview_flutter: ^4.4.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -68,7 +70,7 @@ flutter:
     - ./lib/images/icons8-sneaker-64.png
     - ./lib/images/icons8-t-shirt-50.png
     - ./lib/images/icons8-undershirt-32.png
-    - ./lib/images/shopingcart.png
+    - ./lib/images/cart.png
 
   #   - images/a_dot_ham.jpeg
 
