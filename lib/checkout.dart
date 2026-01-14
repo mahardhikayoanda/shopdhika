@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'homepage.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -27,10 +28,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
   double progress = 0;
 
   final String checkoutUrl =
-      "https://10.0.3.2/server_shop_vanzi/midtrans_checkout.php";
+      "https://backend-mobile.mazdick.biz.id/midtrans_checkout.php";
 
   final String forcePaidUrl =
-      "https://10.0.3.2/server_shop_vanzi/force_payment_success.php";
+      "https://backend-mobile.mazdick.biz.id/force_payment_success.php";
 
   final String midtransSnapUrl =
       "https://app.sandbox.midtrans.com/snap/v2/vtweb/";
@@ -55,11 +56,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
         };
       }).toList();
 
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt("user_id") ?? 0;
+
       final response = await http.post(
         Uri.parse(checkoutUrl),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "user_id": 1,
+          "user_id": userId,
           "total_price": widget.totalPrice,
           "items": items,
         }),
@@ -223,8 +227,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         Expanded(
           child: InAppWebView(
             initialUrlRequest: URLRequest(
-              url: WebUri("$midtransSnapUrl$snapToken"),
-            ),
+  url: Uri.parse("$midtransSnapUrl$snapToken"),
+),
+
             onProgressChanged: (_, p) {
               setState(() => progress = p / 100);
             },

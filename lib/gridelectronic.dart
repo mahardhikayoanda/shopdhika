@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shopdhika/cart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:shopdhika/homepage.dart';
@@ -10,15 +11,27 @@ class GridElektronik extends StatefulWidget {
   const GridElektronik({super.key});
 
   @override
-  State<GridElektronik> createState() => _GridBajuPriaState();
+  State<GridElektronik> createState() => _GridElektronikState();
 }
 
-class _GridBajuPriaState extends State<GridElektronik> {
+class _GridElektronikState extends State<GridElektronik> {
   List<dynamic> products = [];
   bool isLoading = true;
 
+  String getImageUrl(String? url) {
+    if (url == null || url.isEmpty) return "";
+    
+    if (url.contains('localhost')) {
+      return url.replaceAll('localhost', '192.168.18.6');
+    }
+
+    if (url.startsWith('http')) return url;
+    
+    return "https://backend-mobile.mazdick.biz.id/$url";
+  }
+
   Future<void> getAllProducts() async {
-    const String url = "https://10.0.3.2/server_shop_vanzi/gridelektronik.php";
+    const String url = "https://backend-mobile.mazdick.biz.id/gridelektronik.php";
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -107,14 +120,20 @@ class _GridBajuPriaState extends State<GridElektronik> {
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                     child: Image.network(
-                      item['images'],
+                      getImageUrl(item['images']),
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[300],
-                        child: const Center(child: Icon(Icons.image_not_supported)),
-                      ),
+                      errorBuilder: (context, error, stackTrace) {
+                        if (kDebugMode) {
+                          print("Failed to load grid image: ${getImageUrl(item['images'])}");
+                          print("Error: $error");
+                        }
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Center(child: Icon(Icons.image_not_supported)),
+                        );
+                      },
                     ),
                   ),
                   // Icon Favorit (Floating Top Right)
@@ -201,6 +220,15 @@ class DetailElektronik extends StatelessWidget {
 
   const DetailElektronik({super.key, required this.item});
 
+  String getImageUrl(String? url) {
+    if (url == null || url.isEmpty) return "";
+    if (url.contains('localhost')) {
+      return url.replaceAll('localhost', '192.168.18.6');
+    }
+    if (url.startsWith('http')) return url;
+    return "https://backend-mobile.mazdick.biz.id/$url";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -230,7 +258,7 @@ class DetailElektronik extends StatelessWidget {
           children: [
             // Gambar Besar
             Image.network(
-              item['images'],
+              getImageUrl(item['images']),
               width: double.infinity,
               height: 350,
               fit: BoxFit.cover,
@@ -331,12 +359,15 @@ class DetailElektronik extends StatelessWidget {
           ),
           onPressed: () async {
             // ... (Logika Add to Cart Kamu Tetap Sama)
+            final prefs = await SharedPreferences.getInstance();
+            final userId = prefs.getInt("user_id") ?? 0;
+
             final res = await http.post(
-              Uri.parse("https://10.0.3.2/server_shop_vanzi/cart.php"),
+              Uri.parse("https://backend-mobile.mazdick.biz.id/cart.php"),
               headers: {"Content-Type": "application/json"},
               body: jsonEncode({
                 "action": "add",
-                "user_id": 1,
+                "user_id": userId,
                 "product_id": item['id'],
               }),
             );

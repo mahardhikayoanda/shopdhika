@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'homepage.dart';
 import 'checkout.dart';
 
@@ -14,13 +15,22 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   List cartItems = [];
   bool loading = true;
+  int userId = 0;
 
   final String cartUrl =
-      "https://10.0.3.2/server_shop_vanzi/cart.php";
+      "https://backend-mobile.mazdick.biz.id/cart.php";
 
   @override
   void initState() {
     super.initState();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getInt("user_id") ?? 0;
+    });
     fetchCart();
   }
 
@@ -31,7 +41,7 @@ class _CartPageState extends State<CartPage> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "action": "view",
-          "user_id": 1,
+          "user_id": userId,
         }),
       );
 
@@ -51,7 +61,7 @@ class _CartPageState extends State<CartPage> {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "action": "add",
-        "user_id": 1,
+        "user_id": userId,
         "product_id": productId,
       }),
     );

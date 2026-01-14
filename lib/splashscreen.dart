@@ -50,13 +50,13 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'lib/image/cart.png',
+              'lib/images/cart.png',
               width: 150,
               height: 150,
             ),
             const SizedBox(height: 20),
             Text(
-              "Vanzi Online Shop",
+              "Dhika Shop",
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

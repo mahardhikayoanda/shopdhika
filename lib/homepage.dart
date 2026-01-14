@@ -29,8 +29,22 @@ class _HomePageState extends State<HomePage> {
   Timer? bannerTimer;
   int indexBanner = 0;
 
+  String getImageUrl(String? url) {
+    if (url == null || url.isEmpty) return "";
+    
+    // Jika ada localhost di URL (biasanya dari database), ganti ke IP server
+    if (url.contains('localhost')) {
+      return url.replaceAll('localhost', '192.168.18.6');
+    }
+
+    if (url.startsWith('http')) return url;
+    
+    // Jika path-nya relatif (misal: "uploads/bola.jpg"), tambahkan base URL server
+    return "https://backend-mobile.mazdick.biz.id/$url";
+  }
+
   Future<void> getAllProductItem() async {
-    String urlProductItem = "https://10.0.3.2/server_shop_vanzi/allproductitem.php";
+    String urlProductItem = "https://backend-mobile.mazdick.biz.id/allproductitem.php";
     try {
       var response = await http.get(Uri.parse(urlProductItem));
       setState(() {
@@ -39,7 +53,7 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (exc) {
       if (kDebugMode) {
-        print(exc);
+        print("Error fetching products: $exc");
       }
     }
   }
@@ -108,9 +122,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     List<String> bannerImage = [
-      "lib/image/ecommerce1.png",
-      "lib/image/ecommerce2.png",
-      "lib/image/ecommerce3.png"
+      "lib/images/banner1.jpg",
+      "lib/images/banner2.jpg",
+      "lib/images/banner3.jpg"
     ];
     return Scaffold(
       appBar: AppBar(
@@ -126,7 +140,7 @@ class _HomePageState extends State<HomePage> {
           icon: const Icon(Icons.arrow_back, size: 25, color: Colors.white),
         ),
         title: Text(
-          username ?? "Vanzi Online Shop",
+          username ?? "Dhika Shop",
           style: const TextStyle(
               fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
         ),
@@ -216,7 +230,7 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Image.asset('lib/image/elektronik.png',
+                              Image.asset('lib/images/icons8-electronics-64.png',
                                   width: 45, height: 45),
                               const Text(
                                 "Electronics",
@@ -247,7 +261,7 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Image.asset('lib/image/sepatupria.png',
+                              Image.asset('lib/images/icons8-sneaker-64.png',
                                   width: 45, height: 45),
                               const Text(
                                 "Men's Shoe",
@@ -278,7 +292,7 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Image.asset('lib/image/bajupria.png',
+                              Image.asset('lib/images/icons8-t-shirt-50.png',
                                   width: 45, height: 45),
                               const Text(
                                 "Men's Shirt",
@@ -309,7 +323,7 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Image.asset('lib/image/sepatuwanita.png',
+                              Image.asset('lib/images/icons8-heels-32.png',
                                   width: 45, height: 45),
                               const Text(
                                 "Women's Shoe",
@@ -340,7 +354,7 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Image.asset('lib/image/bajuwanita.png',
+                              Image.asset('lib/images/icons8-undershirt-32.png',
                                   width: 45, height: 45),
                               const Text(
                                 "Women's Dress",
@@ -422,9 +436,13 @@ class _HomePageState extends State<HomePage> {
                                         color: Colors.grey[100],
                                       ),
                                       child: Image.network(
-                                        itemProduct['images'],
+                                        getImageUrl(itemProduct['images']),
                                         fit: BoxFit.contain,
                                         errorBuilder: (context, error, stackTrace) {
+                                          if (kDebugMode) {
+                                            print("Failed to load image: ${getImageUrl(itemProduct['images'])}");
+                                            print("Error: $error");
+                                          }
                                           return const Center(
                                             child: Icon(
                                               Icons.image_not_supported,

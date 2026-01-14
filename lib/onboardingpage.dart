@@ -14,36 +14,36 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int indexPage = 0;
   List<Map<String, String>> onBoardData = [
     {
-      "title": "Vanzi Store",
+      "title": "Dhika Store",
       "subtitle": "Welcome to our Shop!",
       "image":
-          "https://atlantaelectronics.co.id/assets/public/images/product/240109012132GCX257CQEW.png",
+          "https://komerce.id/blog/wp-content/uploads/2021/11/daftar-produk-elektronik-terlaris.jpg",
     },
     {
       "title": "Men's Fashion",
       "subtitle":
           "Discover the latest men's clothing collection for your daily style",
       "image":
-          "https://edit.voila.id/wp-content/uploads/2025/01/1.-Jenis-baju-pria.jpg",
+          "https://shopee.co.id/inspirasi-shopee/wp-content/uploads/2019/04/0df807107543c82a2afbc782df35bcba.jpg",
     },
     {
       "title": "Women's Fashion",
       "subtitle":
           "Look beautiful and elegant with our women's clothing collection",
       "image":
-          "https://edit.voila.id/wp-content/uploads/2025/12/12-1.jpg",
+          "https://www.hijup.com/magazine/wp-content/uploads/2022/12/b99e37ba-baju-setelan-garis-vertikal.jpeg",
     },
     {
       "title": "Men's Shoes",
       "subtitle": "Comfortable for sports and everyday activities",
       "image":
-          "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto/772b77e2-2baf-4b44-ab4e-d767b038b105/NIKE+P-6000+PRM.png",
+          "https://www.skechers.id/media/catalog/product/cache/4cd1b9859276d7e49e0c5f4dfaae81a4/0/8/0888-SKE237301BKN00511H-1.jpg",
     },
     {
       "title": "Women's Heels",
       "subtitle": "Complete your look with our best heels collection",
       "image":
-          "https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full/catalog-image/109/MTA-172888543/brd-44261_garage-sepatu-high-heels-wanita-h-3974-wanita-kasual-kerja-kantor-trendi-berkualitas-hitam_full01-6911313f.jpg",
+          "https://www.tas.id/wp-content/uploads/JSH772-IDR.200.000-MATERIAL-PU-COLOR-BLACK-HEEL-8CM-WEIGHT-700GR-SIZE-3536373839.jpg",
     },
   ];
 
